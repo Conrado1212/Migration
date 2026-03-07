@@ -236,7 +236,7 @@ function Start-New{
                 svalue = $item.($form.column)
             }
         }
-        
+        #body mod 
         $body =@{
             workflow = @{
                 guid = ""
@@ -267,5 +267,3 @@ function Start-New{
         # $response | ConvertTo-Json -Depth 5
 }
 #$response = @(Start-New -baseUrl $baseUrl -clientId $CLIENT_ID -clientSecret $CLIENT_SECRET)
-
-#Write-Host "[line 178] data: $response"
