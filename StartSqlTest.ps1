@@ -255,12 +255,8 @@ function Start-New{
                     svalue = "$($item.col9)"
                 }
             )
-            attachments = @(
-                @{
-                    name = "$($item.col8)"
-                    content = "$($item.col11)"
-                }
-            )
+            attachments = $item.attachments
+            
 
            } | ConvertTo-Json -Depth 5
           # $allGroupsParam +=$body
@@ -271,8 +267,8 @@ function Start-New{
             try{
           # $response =  Invoke-RestMethod -Method Post -Uri $new -Body $Body  -Headers $headers 
            $response =  Invoke-RestMethod -Method Post -Uri $new -Body $testBody  -Headers $headers 
-            Write-Host "[Line 167] Instance created for " $item.id 
-            Write-Host "[Line 168] Response: $($response | ConvertTo-Json -Depth 5)"
+            Write-Host "[Line 167] Instance created for id $($item.nda_id) $($response.id) " 
+           # Write-Host "[Line 168] Response: $($response | ConvertTo-Json -Depth 5)"
         }catch{
         Write-Error "[Line 170] Error : $_"
         return $null
