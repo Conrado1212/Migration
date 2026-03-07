@@ -132,7 +132,7 @@ foreach($item in $dane){
 
         foreach($data in $att){
 
-   if (![string]::IsNullOrWhiteSpace($item.$data) -and (Test-Path  $item.n$data)) {   
+   if (![string]::IsNullOrWhiteSpace($item.$data) -and (Test-Path  $item.$data)) {   
     try{
  $bytes = [System.IO.File]::ReadAllBytes($item.$data)
                     $base64 = [Convert]::ToBase64String($bytes)
@@ -219,8 +219,23 @@ function Start-New{
     
    $dane =  Get-Data -server $server -db $db -Query $query
  
+ #field map 
+   $fieldMap = @(
+       @{
+           guid=""
+           column=""
+       }
+   )
 
     foreach($item in $dane){
+
+
+        $formFields = foreach ($form in $fieldMap) {
+            @{
+                guid   = $form.guid
+                svalue = $item.($form.column)
+            }
+        }
         
         $body =@{
             workflow = @{
@@ -229,32 +244,7 @@ function Start-New{
             formType = @{
                 guid = ""
             }
-            formFields = @(
-                @{
-                     guid = ""   #1
-                    svalue = "$($item.col2)"
-                },
-                @{
-                     guid = "" #  2 
-                    svalue = "$($item.col2)"
-                },
-                @{
-                     guid = "" #  3 
-                     svalue = "$($item.col3)"
-                },
-                @{
-                    guid = "" #  5
-                     svalue = "$($item.col5)"
-                },
-                @{
-                     guid = "" #  6
-                      svalue = "$($item.col8)"
-                },
-                @{
-                     guid = "" #  7
-                    svalue = "$($item.col9)"
-                }
-            )
+            formFields = $formFields
             attachments = $item.attachments
             
 
