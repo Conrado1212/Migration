@@ -42,7 +42,7 @@ function Get-Config{
   
      foreach ($p in $MyInvocation.MyCommand.Parameters.Keys) { 
          if (-not $PSBoundParameters.ContainsKey($p)) {
-              Set-Variable -Name $p -Value (Read-Host "Podaj wartość dla $p")
+              Set-Variable -Name $p -Value (Read-Host "Add vealu for: $p")
              }
              } 
             
@@ -93,57 +93,68 @@ function Get-normalizeData{
    $dane =  Get-Data -server $server -db $db -Query $query 
  #  $dane | Format-Table -AutoSize
 $resultNorm = @()
-
+#decision
+$dec = @{}
+#map
+$test = @()
+$att = @()
 foreach($item in $dane){
 #Write-MessageLog "Line [86] $($item.nda_id)"
+foreach($prop in $item.PSObject.Properties){
+    if($prop.Name -like "nda_*"){
+        if($dec.ContainsKey($prop.Name)){
+            continue
+        }
+        $userInput = Read-Host "[Line 108] Do you want to add this $($prop.Name) to map (Y/Z?N)"
+        if($userInput -eq "Y"){
+            $dec[$prop.Name] = 'Y'
+            $test += $prop.Name
+        }elseif($userInput -eq "Z"){
+            $dec[$prop.Name] = 'Z'
+            $att +=$prop.Name
+        }else{
+            $dec[$prop.Name] = 'N'
+        }
+    }
+}
+}
+foreach($item in $dane){
+    $test2 =@{}
+    foreach($prop in $test){
+        if($item.PSObject.Properties[$prop]){
+            $test2[$prop] = $item.prop
+        }else{
+            $test2[$prop] = $null
+        }
+    }
+    $test2['attachments'] = @()
+    $current = [PSCustomObject]$test2
 
- $obj += [PSCustomObject]@{
-                        Id   = $item.nda_id
-                        DataZawarciaUmowy  = $item.'nda_DataZawarciaUmowyDD/MM'
-                        DataObowiaywaniaUmowy = $item.nda_DataObowiaywaniaUmowy
-                        CzasUmowyLata =   $item.CzasUmowyLata
-                        kontrahent =   $item.nda_kontrahent
-                        projekt  = $item.nda_projekt
-                        skanUmowyNazwa = $null
-                        skanUmowyBase64 = $null
-                        skanZalacznikaNazwa = $null
-                        skanZalacznikaBase64 = $null
+        foreach($data in $att){
 
-                 }
-   if (![string]::IsNullOrWhiteSpace($item.nda_skanUmowy) -and (Test-Path  $item.nda_skanUmowy)) {   
+   if (![string]::IsNullOrWhiteSpace($item.$data) -and (Test-Path  $item.n$data)) {   
     try{
- $bytes = [System.IO.File]::ReadAllBytes($item.nda_skanUmowy)
+ $bytes = [System.IO.File]::ReadAllBytes($item.$data)
                     $base64 = [Convert]::ToBase64String($bytes)
                 #nazwa pliku ze sciezki 
-                 $name = Split-Path -Path  $item.nda_skanUmowy -Leaf
+                 $name = Split-Path -Path  $item.$data -Leaf
                 # Write-MessageLog "Nazwa pliku: $name ,base64:  $base64"
-                $obj.skanUmowyNazwa = $name
-                $obj.skanUmowyBase64 = $base64
+           $current.attachments == @{
+               name = $name
+               content = $base64
+           }
     }catch{
-        Write-MessageLog ("Plik {0}. Error: {1}" -f $item.skanUmowyNazwa, $_.Exception.Message) -Level "WARNING"
+        Write-MessageLog ("File {0}. Error: {1}" -f $item.$data, $_.Exception.Message) -Level "WARNING"
     }
                  
                   }
-                  if (![string]::IsNullOrWhiteSpace($item.nda_skanZalacznika) -and (Test-Path  $item.nda_skanZalacznika)) {   
-    try{
- $bytes2 = [System.IO.File]::ReadAllBytes($item.nda_skanZalacznika)
-                    $base64 = [Convert]::ToBase64String($bytes2)
-                #nazwa pliku ze sciezki 
-                 $name = Split-Path -Path  $item.nda_skanZalacznika -Leaf
-                # Write-MessageLog "Nazwa pliku: $name ,base64:  $base64"
-                $obj.skanZalacznikaNazwa = $name
-                $obj.skanZalacznikaBase64 = $base64
-    }catch{
-        Write-MessageLog ("Plik {0}. Error: {1}" -f $item.nda_skanZalacznikaNazwa, $_.Exception.Message) -Level "WARNING"
-    }
-                 
-                  }
-                  $resultNorm +=$obj
+                }
+                  $resultNorm +=$current
 }
 return $resultNorm
 }
 
-Get-normalizeData
+#Get-normalizeData
 
 function Get-AccessToken{
     #parametr base url ktory podaje user
