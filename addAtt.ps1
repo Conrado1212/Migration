@@ -53,30 +53,48 @@ try{
 function Get-File{
     $att =@()
     
-    $testFiles = @("{COLUMN_Value:DET_Att6#DET_Att6}", "{COLUMN_Value:det_att7#det_att7}");
+    $testFiles = @(
+        @{  
+            Value = "{COLUMN_Value:DET_Att6#DET_Att6}"
+            Separator = $null
+        },
+        @{  
+            Value =  "{COLUMN_Value:det_att7#det_att7}"
+            Separator =  "(?=C:\\certs\\)"
+        } 
+   );
 
     foreach ($testFile in $testFiles) {
         if ([string]::IsNullOrWhiteSpace($testFile)) {
             continue
         }
-if (-not (Test-Path -LiteralPath $testFile -PathType Leaf)) {
-$msg = "Plik nie istnieje: $testFile"
+
+        if($testFile.Separator){
+            $files = $testFile.Value -split $testFile.Separator |
+            ForEach-Object { $_.Trim() } |
+            Where-Object { $_ }
+        }else{
+            $files = @($testFile.Value.Trim())
+        }
+        foreach ($file in $files) {
+if (-not (Test-Path -LiteralPath $file -PathType Leaf)) {
+$msg = "Plik nie istnieje: $file"
 Write-MessageLog $msg -Level "ERROR"
 throw [System.IO.FileNotFoundException]::new($msg)
 }
 try{
-     $bytes = [System.IO.File]::ReadAllBytes($testFile)
+     $bytes = [System.IO.File]::ReadAllBytes($file)
       $name = Split-Path -Path  $testFile -Leaf
        $att +=[PSCustomObject]@{
                             name = $name
                             content = [Convert]::ToBase64String($bytes)
                         }
 }catch{
-$msg2 = "Nie udało się odczytać pliku '$testFile'. Błąd: $($_.Exception.Message)"
+$msg2 = "Nie udało się odczytać pliku '$file'. Błąd: $($_.Exception.Message)"
 Write-MessageLog $msg2 -Level "ERROR"
 throw $msg
 }
-
+        }
                     }
                         return $att
 }
