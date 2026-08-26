@@ -65,7 +65,7 @@ function Get-File{
    );
 
     foreach ($testFile in $testFiles) {
-        if ([string]::IsNullOrWhiteSpace($testFile)) {
+        if ([string]::IsNullOrWhiteSpace($testFile.Value)) {
             continue
         }
 
